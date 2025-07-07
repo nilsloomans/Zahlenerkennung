@@ -75,7 +75,7 @@ def main():
         X_train,
         {"digit": y_d_train, "person": y_p_train},
         validation_data=(X_test, {"digit": y_d_test, "person": y_p_test}),
-        epochs=100,
+        epochs=200,
         batch_size=16
     )
 
