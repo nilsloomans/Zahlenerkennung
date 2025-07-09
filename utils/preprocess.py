@@ -9,8 +9,8 @@ def preprocess_image(img_path, output_size=(128, 128)):
     try:
         img = Image.open(img_path).convert("L")  # Graustufen
         img = img.resize(output_size)
-        img_array = np.array(img) / 255.0  # Normalisierung
-        return img_array.reshape(*output_size, 1)  # Kanal-Dimension hinzufügen
+        img_array = np.array(img) / 255.0  # Normalisierung auf Werte zwischen 0–1
+        return img_array.reshape(*output_size, 1)  # Kanal-Dimension hinzufügen (für CNN)
     except Exception as e:
         print(f"Fehler beim Verarbeiten von {img_path}: {e}")
         return None
@@ -24,9 +24,13 @@ def preprocess_all(input_dir, output_dir, output_size=(128, 128)):
     for filename in os.listdir(input_dir):
         if filename.lower().endswith((".jpg", ".png", ".jpeg")):
             input_path = os.path.join(input_dir, filename)
-            output_path = os.path.join(output_dir, filename.replace(".jpg", ".npy").replace(".png", ".npy"))
+            output_path = os.path.join(output_dir, filename.rsplit(".", 1)[0] + ".npy")
             processed = preprocess_image(input_path, output_size)
             if processed is not None:
                 np.save(output_path, processed)
                 count += 1
     print(f"{count} Bilder erfolgreich verarbeitet und gespeichert.")
+
+# 🔁 Automatischer Start, wenn Datei direkt ausgeführt wird
+if __name__ == "__main__":
+    preprocess_all("data/raw", "data/processed")
