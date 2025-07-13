@@ -1,6 +1,6 @@
 # Zahlenerkennung
 
-**Projektbeschreibung**
+# Projektbeschreibung
 Dieses Projekt umfasst zwei Ansätze zur Erkennung handgeschriebener Ziffern (0–9) und der schreibenden Person (Tim, Thanadon oder Nils) anhand von Bilddaten:
 
 Eigenes CNN-Modell: Von Grund auf entwickeltes Convolutional Neural Network mit zwei Ausgängen (Zahl und Person).
@@ -9,7 +9,7 @@ Transfer Learning Modell: Auf ResNet18 basierendes Multi-Task-Modell mit zwei Kl
 
 Ziel ist es, aus einem hochgeladenen Bild die enthaltene Ziffer und den Verfasser zu ermitteln.
 
-**Voraussetzungen**
+# Voraussetzungen
 Für beide Modelle
 Python ≥ 3.10
 
@@ -21,7 +21,7 @@ pip install tensorflow numpy matplotlib scikit-learn streamlit pillow
 Transfer Learning Modell (PyTorch-Version)
 pip install torch torchvision numpy pillow streamlit
 
-**Web-Anwendung starten**
+# Web-Anwendung starten
 Eigenes CNN-Modell
 Stelle sicher, dass das Modell cnn_model.h5 unter model/ liegt.
 
