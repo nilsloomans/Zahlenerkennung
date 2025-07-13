@@ -6,6 +6,17 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 def load_dataset(data_dir):
+    """
+    Lädt alle .npy-Bilder aus dem gegebenen Verzeichnis,
+    extrahiert Ziffern und Personen aus dem Dateinamen,
+    wandelt Labels in One-Hot-Encoding um.
+
+    Rückgabe:
+        X: Bilddaten (NumPy-Array)
+        y_digits: One-Hot Ziffernlabels (10 Klassen)
+        y_persons: One-Hot Personenlabels (3 Klassen)
+        person_map: Mapping Name → Index
+    """
     X, y_digits, y_persons = [], [], []
     person_set = set()
 
@@ -25,12 +36,13 @@ def load_dataset(data_dir):
             person_set.add(person)
 
     X = np.array(X)
-    y_digits = tf.keras.utils.to_categorical(y_digits, 10)
+    y_digits = tf.keras.utils.to_categorical(y_digits, 10)  # Ziffern One-Hot
 
+    # Mapping der Personen zu Integer-Labels
     person_list = sorted(list(person_set))
     person_map = {name: i for i, name in enumerate(person_list)}
     y_persons = [person_map[p] for p in y_persons]
-    y_persons = tf.keras.utils.to_categorical(y_persons, len(person_map))
+    y_persons = tf.keras.utils.to_categorical(y_persons, len(person_map))  # Personen One-Hot
 
     print(f"Datensätze geladen: {len(X)}")
     print(f"Personen: {person_map}")
@@ -38,6 +50,11 @@ def load_dataset(data_dir):
     return X, y_digits, y_persons, person_map
 
 def build_model(input_shape=(128, 128, 1), num_persons=3):
+    """
+    Baut ein CNN mit zwei parallelen Softmax-Ausgängen:
+    - Ziffernklassifikation (10 Klassen)
+    - Personenklassifikation (num_persons Klassen)
+    """
     inputs = tf.keras.Input(shape=input_shape)
 
     x = tf.keras.layers.Conv2D(32, (3, 3), activation="relu")(inputs)
@@ -63,9 +80,13 @@ def build_model(input_shape=(128, 128, 1), num_persons=3):
     return model
 
 def plot_history(history):
+    """
+    Visualisiert Trainings- und Validierungsverlauf (Accuracy & Loss)
+    und speichert das Diagramm als PNG-Datei.
+    """
     plt.figure(figsize=(12, 5))
 
-    # Accuracy
+    # Accuracy-Verlauf
     plt.subplot(1, 2, 1)
     plt.plot(history.history["digit_accuracy"], label="Digit Accuracy (Train)")
     plt.plot(history.history["val_digit_accuracy"], label="Digit Accuracy (Val)")
@@ -74,7 +95,7 @@ def plot_history(history):
     plt.legend()
     plt.title("Accuracy")
 
-    # Loss
+    # Loss-Verlauf
     plt.subplot(1, 2, 2)
     plt.plot(history.history["digit_loss"], label="Digit Loss (Train)")
     plt.plot(history.history["val_digit_loss"], label="Digit Loss (Val)")
@@ -87,9 +108,16 @@ def plot_history(history):
     os.makedirs("model", exist_ok=True)
     plt.savefig("model/training_plot.png")
     plt.close()
-    print("📈 Trainingsverlauf gespeichert unter: model/training_plot.png")
+    print(" Trainingsverlauf gespeichert unter: model/training_plot.png")
 
 def apply_augmentation(X, y_digits, y_persons, augment_factor=2):
+    """
+    Erweitert die Trainingsdaten künstlich durch Datenaugmentation.
+    - Rotation, Zoom, Shift
+    - augment_factor: Wie viele neue Versionen pro Bild
+
+    Rückgabe: erweiterte X, y_digits, y_persons Arrays
+    """
     datagen = ImageDataGenerator(
         rotation_range=15,
         zoom_range=0.1,
@@ -113,26 +141,34 @@ def apply_augmentation(X, y_digits, y_persons, augment_factor=2):
     y_d_aug = np.array(y_d_aug)
     y_p_aug = np.array(y_p_aug)
 
-    print(f"🔄 {len(X)} → {len(X_aug)} augmentierte Bilder erzeugt.")
+    print(f" {len(X)} → {len(X_aug)} augmentierte Bilder erzeugt.")
     return np.concatenate([X, X_aug]), np.concatenate([y_digits, y_d_aug]), np.concatenate([y_persons, y_p_aug])
 
 def main():
+    """
+    Hauptfunktion zum Laden der Daten, Augmentieren, Trainieren und Speichern des Modells.
+    """
     X, y_digits, y_persons, person_map = load_dataset("data/processed")
 
+    # Train/Test-Split (80/20)
     X_train, X_test, y_d_train, y_d_test, y_p_train, y_p_test = train_test_split(
         X, y_digits, y_persons, test_size=0.2, random_state=42
     )
 
+    # Augmentierte Trainingsdaten generieren
     X_train_aug, y_d_aug, y_p_aug = apply_augmentation(X_train, y_d_train, y_p_train, augment_factor=2)
 
+    # Modell mit entsprechender Eingabegröße und Klassenanzahl erstellen
     model = build_model(input_shape=X.shape[1:], num_persons=y_persons.shape[1])
 
+    # EarlyStopping, um Überanpassung zu vermeiden
     early_stop = tf.keras.callbacks.EarlyStopping(
         monitor="val_loss",
         patience=10,
         restore_best_weights=True
     )
 
+    # Modell trainieren
     history = model.fit(
         X_train_aug,
         {"digit": y_d_aug, "person": y_p_aug},
@@ -143,10 +179,12 @@ def main():
         verbose=1
     )
 
+    # Modell speichern
     os.makedirs("model", exist_ok=True)
     model.save("model/cnn_model.h5")
     print("✅ Modell gespeichert unter: model/cnn_model.h5")
 
+    # Trainingsverlauf speichern
     plot_history(history)
 
 if __name__ == "__main__":
