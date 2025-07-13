@@ -55,7 +55,7 @@ streamlit run web_app.py
 1. Stelle sicher, dass model.pth im Projektverzeichnis liegt.  
 2. Starte die App:
 
-streamlit run app.py
+streamlit run TransferLearning/app.py
 
 Alternativen:
 
